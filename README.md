@@ -58,3 +58,17 @@ Primary references:
 ## 26.2 migration policy
 
 The source includes narrow 26.2 syntax diagnostics, notably the `minecraft:type_specific/slime` to `minecraft:type_specific/cube_mob` rename. The runnable artifact is pinned to 1.21.4 because the 26.2 official Minecraft mappings were not resolvable by Loom in this build environment. A future 26.2 release must update Minecraft, mappings, Fabric API, and test APIs together after official artifacts are available.
+
+## Repairs and backups
+
+Version 1.2.0 adds an operator-only repair command for directory datapacks:
+
+```mcfunction
+/datapackfixer scan
+/datapackfixer fix
+/reload
+```
+
+`fix` requires permission level 4. Before any change, it copies every directory datapack to `world/datapack_fixer_backups/<UTC timestamp>/` and writes an `audit.txt` report there. It never processes ZIP/JAR datapacks.
+
+The current allowlist repairs only deterministic transformations: singular data directory names, the `minecraft:type_specific/slime` and `minecraft:alternative` renames, and a missing 1.21.4 `pack_format` in otherwise valid `pack.mcmeta`. Invalid JSON, ambiguous recipe conversions, legacy NBT/item-component rewrites, and gameplay-semantic migrations are reported but deliberately not guessed or rewritten.

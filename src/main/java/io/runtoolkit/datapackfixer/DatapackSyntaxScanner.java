@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -14,6 +15,7 @@ import java.util.stream.Stream;
 
 public final class DatapackSyntaxScanner {
     private static final long MAX_FILE_SIZE = 2_000_000L;
+    private static final int MAX_FILES = 10_000;
     private static final Set<String> PLURAL_DIRECTORIES = Set.of(
             "advancements", "functions", "item_modifiers", "loot_tables", "predicates", "recipes", "structures",
             "tags/blocks", "tags/entity_types", "tags/fluids", "tags/functions", "tags/game_events", "tags/items"
@@ -23,7 +25,17 @@ public final class DatapackSyntaxScanner {
         if (!Files.isDirectory(datapacksDirectory)) return List.of();
         List<Diagnostic> results = new ArrayList<>();
         try (Stream<Path> paths = Files.walk(datapacksDirectory)) {
-            paths.filter(Files::isRegularFile).forEach(file -> scanFile(datapacksDirectory, file, results));
+            Iterator<Path> iterator = paths.filter(Files::isRegularFile).iterator();
+            int scannedFiles = 0;
+            while (iterator.hasNext() && scannedFiles < MAX_FILES) {
+                scanFile(datapacksDirectory, iterator.next(), results);
+                scannedFiles++;
+            }
+            if (iterator.hasNext()) {
+                results.add(new Diagnostic(datapacksDirectory, 1, Diagnostic.Severity.WARNING, "SCAN_LIMIT",
+                        "Stopped after " + MAX_FILES + " files to protect server startup time.",
+                        "Split unusually large datapack directories or remove unrelated files."));
+            }
         } catch (IOException exception) {
             results.add(new Diagnostic(datapacksDirectory, 1, Diagnostic.Severity.ERROR, "SCAN_IO",
                     "Could not enumerate datapacks: " + exception.getMessage(), "Check filesystem permissions."));
@@ -32,13 +44,17 @@ public final class DatapackSyntaxScanner {
     }
 
     private void scanFile(Path root, Path file, List<Diagnostic> results) {
+        String normalized = root.relativize(file).toString().replace('\\', '/').toLowerCase(Locale.ROOT);
+        boolean isJson = normalized.endsWith(".json") || normalized.endsWith("pack.mcmeta");
+        boolean isFunction = normalized.endsWith(".mcfunction");
+        if (!isJson && !isFunction) return;
         try {
             if (Files.size(file) > MAX_FILE_SIZE) return;
             String content = Files.readString(file, StandardCharsets.UTF_8);
-            String normalized = root.relativize(file).toString().replace('\\', '/').toLowerCase(Locale.ROOT);
             checkPluralDirectories(file, normalized, results);
-            if (normalized.endsWith(".json") || normalized.endsWith("pack.mcmeta")) checkJson(file, content, results);
-            if (normalized.endsWith(".mcfunction")) checkFunctionDelimiters(file, content, results);
+            if (isJson) checkJson(file, content, results);
+            if (normalized.endsWith("pack.mcmeta")) checkPackMetadata(file, content, results);
+            if (isFunction) checkFunctionDelimiters(file, content, results);
             checkKnownMigrations(file, normalized, content, results);
         } catch (IOException exception) {
             results.add(new Diagnostic(file, 1, Diagnostic.Severity.ERROR, "READ_IO",
@@ -52,6 +68,26 @@ public final class DatapackSyntaxScanner {
         } catch (JsonParseException exception) {
             results.add(new Diagnostic(file, lineOf(exception.getMessage()), Diagnostic.Severity.ERROR, "JSON_INVALID",
                     "Invalid JSON: " + compact(exception.getMessage()), "Repair JSON punctuation, quoting, or delimiters."));
+        }
+    }
+
+    private static void checkPackMetadata(Path file, String content, List<Diagnostic> results) {
+        try {
+            var root = JsonParser.parseString(content);
+            if (!root.isJsonObject() || !root.getAsJsonObject().has("pack")) {
+                results.add(new Diagnostic(file, 1, Diagnostic.Severity.ERROR, "PACK_METADATA_MISSING",
+                        "pack.mcmeta must contain a top-level 'pack' object.",
+                        "Add a valid pack object with pack_format and description."));
+                return;
+            }
+            var pack = root.getAsJsonObject().getAsJsonObject("pack");
+            if (!pack.has("pack_format")) {
+                results.add(new Diagnostic(file, 1, Diagnostic.Severity.ERROR, "PACK_FORMAT_MISSING",
+                        "This 1.21.4-targeted pack is missing pack_format.",
+                        "Set pack_format to 61 for Minecraft 1.21.4."));
+            }
+        } catch (JsonParseException ignored) {
+            // The JSON parser diagnostic is already reported by checkJson.
         }
     }
 
