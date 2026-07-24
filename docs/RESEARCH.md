@@ -25,3 +25,7 @@ This project intentionally limits itself to deterministic syntax diagnostics. It
 ## Safety decision
 
 The scanner runs once at server start and only reads normal files in the world's `datapacks` directory. It skips archives and files larger than 2 MB. The mod has no mixins and does not register networking, commands, reload listeners, or data pack resources. It is therefore server-side optional for clients.
+
+## Build availability constraint
+
+The runnable test target is 1.21.4. The 26.2 migration rules remain documented and tested as scanner rules, but a runtime upgrade requires official 26.2 artifacts, mappings, and matching Fabric API modules. The earlier lock warning was incidental to an interrupted process and was resolved by Loom cache rebuild.

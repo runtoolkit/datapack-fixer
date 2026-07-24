@@ -9,7 +9,7 @@ public final class DatapackFixerClientGameTests implements FabricClientGameTest 
     @Override
     public void runTest(ClientGameTestContext context) {
         try (TestSingleplayerContext singleplayer = context.worldBuilder().create()) {
-            singleplayer.getClientLevel().waitForChunksRender();
+            singleplayer.getClientWorld().waitForChunksRender();
             context.takeScreenshot("datapack-fixer-client-smoke");
         }
     }

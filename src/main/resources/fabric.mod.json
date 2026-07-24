@@ -7,5 +7,5 @@
   "authors": ["runtoolkit"],
   "environment": "*",
   "entrypoints": { "main": ["io.runtoolkit.datapackfixer.DatapackFixerMod"] },
-  "depends": { "fabricloader": ">=0.19.3", "fabric-api": "*", "minecraft": "26.2", "java": ">=25" }
+  "depends": { "fabricloader": ">=0.19.3", "fabric-api": "*", "minecraft": "1.21.4", "java": ">=21" }
 }

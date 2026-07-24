@@ -1,6 +1,6 @@
 # Datapack Fixer
 
-A **Fabric 26.2 server-safe diagnostic mod** for datapack syntax migration. It deliberately does not rewrite pack files, intercept datapack loading, patch network packets, or change gameplay. It only reads unpacked datapacks when the integrated or dedicated server starts and emits diagnostics to the server log.
+A **Fabric 1.21.4 server-safe diagnostic mod** for datapack syntax migration. It deliberately does not rewrite pack files, intercept datapack loading, patch network packets, or change gameplay. It only reads unpacked datapacks when the integrated or dedicated server starts and emits diagnostics to the server log.
 
 ## Scope
 
@@ -23,10 +23,10 @@ Only directory datapacks are inspected. ZIP datapacks are intentionally skipped 
 
 ## Requirements
 
-- Minecraft Java Edition 26.2
+- Minecraft Java Edition 1.21.4
 - Fabric Loader 0.19.3 or newer
-- Fabric API 0.155.2+26.2 or compatible newer release
-- Java 25
+- Fabric API 0.119.4+1.21.4
+- Java 21
 
 ## Build and test
 
@@ -54,3 +54,7 @@ Primary references:
 - [Minecraft Java 1.21.2 release notes](https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21-2)
 - [Fabric for Minecraft 26.2](https://fabricmc.net/2026/06/15/262.html)
 - [Fabric automated testing documentation](https://docs.fabricmc.net/develop/automatic-testing)
+
+## 26.2 migration policy
+
+The source includes narrow 26.2 syntax diagnostics, notably the `minecraft:type_specific/slime` to `minecraft:type_specific/cube_mob` rename. The runnable artifact is pinned to 1.21.4 because the 26.2 official Minecraft mappings were not resolvable by Loom in this build environment. A future 26.2 release must update Minecraft, mappings, Fabric API, and test APIs together after official artifacts are available.

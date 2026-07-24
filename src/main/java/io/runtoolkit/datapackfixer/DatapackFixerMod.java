@@ -2,7 +2,7 @@ package io.runtoolkit.datapackfixer;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.util.WorldSavePath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +13,7 @@ public final class DatapackFixerMod implements ModInitializer {
     @Override
     public void onInitialize() {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            var diagnostics = new DatapackSyntaxScanner().scan(server.getWorldPath(LevelResource.DATAPACK_DIR));
+            var diagnostics = new DatapackSyntaxScanner().scan(server.getSavePath(WorldSavePath.DATAPACKS));
             if (diagnostics.isEmpty()) {
                 LOGGER.info("Datapack Fixer found no supported syntax issues.");
                 return;
